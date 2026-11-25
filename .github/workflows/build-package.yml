@@ -1,0 +1,58 @@
+# Build one R package from a git URL with r-universe's reusable build workflow.
+# Dispatch: gh workflow run build-package.yml -f repository=<url> -f ref=<branch|sha>
+name: Build package
+run-name: ${{ inputs.repository }}@${{ inputs.ref }}${{ inputs.run_id && format(' [{0}]', inputs.run_id) || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Git URL of the package
+        required: true
+      ref:
+        # ponytail: build.yml defaults ref to *this* repo's sha, so a ref is always passed
+        description: Branch or commit to build (Bioconductor git uses devel / RELEASE_3_xx)
+        default: devel
+      subdir:
+        description: Package subdirectory, if any
+        default: ''
+      skip:
+        description: Platforms to skip, e.g. "macos windows wasm"
+        default: ''
+      run_id:
+        description: Caller's correlation id, shown in the run name
+        default: ''
+
+jobs:
+  build:
+    # Pinned: r-universe-org/workflows v3 @ 2026-11-25. Bump deliberately.
+    uses: r-universe-org/workflows/.github/workflows/build.yml@8ba751f312cff24cb86583b4b874a67eacd514ca
+    with:
+      repository: ${{ inputs.repository }}
+      ref: ${{ inputs.ref }}
+      subdir: ${{ inputs.subdir }}
+      skip: ${{ inputs.skip }}
+      universe: bioc              # dependencies come from bioc.r-universe.dev
+      organization: bioconductor  # adds the BiocCheck job; no extra repos
+
+  summary:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write result.json
+        env:
+          PACKAGE: ${{ needs.build.outputs.package }}
+          VERSION: ${{ needs.build.outputs.version }}
+          RESULT: ${{ needs.build.result }}
+        run: |
+          jq -n --arg repository '${{ inputs.repository }}' --arg ref '${{ inputs.ref }}' \
+                --arg run_id '${{ inputs.run_id }}' --arg package "$PACKAGE" \
+                --arg version "$VERSION" --arg result "$RESULT" \
+                '$ARGS.named' > result.json
+          cat result.json
+          echo "### $PACKAGE $VERSION: $RESULT" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result
+          path: result.json
