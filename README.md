@@ -4,7 +4,7 @@ A toy: build any R package from a git URL on GitHub Actions, using
 [r-universe's reusable `build.yml`](https://github.com/r-universe-org/workflows/blob/v3/.github/workflows/build.yml)
 without a universe monorepo or r-universe's deploy step.
 
-One dispatch runs the full r-universe matrix: source package and vignettes,
+One dispatch runs the r-universe matrix, minus R-oldrel: source package and vignettes,
 R CMD check and binaries on Linux, Windows and macOS, WebAssembly, and BiocCheck.
 Results stay as run artifacts (`package-*`, `bioc-checks`, `result`).
 
@@ -16,4 +16,5 @@ just runs; just fetch <run-id>
 ```
 
 Dependencies still come from `bioc.r-universe.dev` (`universe: bioc`), and
-`build.yml` is pinned to a commit; bump it deliberately.
+`build.yml` is vendored as `.github/workflows/rubuild.yml` (pinned upstream commit, one
+local change: no oldrel builds). Resync it deliberately.

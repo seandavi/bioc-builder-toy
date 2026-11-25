@@ -25,8 +25,8 @@ on:
 
 jobs:
   build:
-    # Pinned: r-universe-org/workflows v3 @ 2026-11-25. Bump deliberately.
-    uses: r-universe-org/workflows/.github/workflows/build.yml@8ba751f312cff24cb86583b4b874a67eacd514ca
+    # Vendored copy of r-universe's build.yml, minus oldrel (see its header).
+    uses: ./.github/workflows/rubuild.yml
     with:
       repository: ${{ inputs.repository }}
       ref: ${{ inputs.ref }}
